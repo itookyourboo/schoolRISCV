@@ -13,6 +13,7 @@ vlog -vlog01compat \
 vsim -voptargs="+acc" work.sm_testbench
 
 # add signals to waveform
+log -r *
 add wave -radix hex sim:/sm_testbench/sm_top/sm_cpu/*
 add wave -radix hex sim:/sm_testbench/sm_top/sm_cpu/rf/*
 add wave -radix hex sim:/sm_testbench/sm_top/sm_cpu/rf/rf
