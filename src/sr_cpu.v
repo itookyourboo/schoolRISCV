@@ -21,6 +21,7 @@ module sr_cpu
 );
     //control wires
     wire        aluZero;
+    wire        aluNegative;
     wire        pcSrc;
     wire        regWrite;
     wire        aluSrc;
@@ -94,6 +95,7 @@ module sr_cpu
         .srcB       ( srcB         ),
         .oper       ( aluControl   ),
         .zero       ( aluZero      ),
+        .negative   ( aluNegative  ),
         .result     ( aluResult    ) 
     );
 
@@ -105,6 +107,7 @@ module sr_cpu
         .cmdF3      ( cmdF3        ),
         .cmdF7      ( cmdF7        ),
         .aluZero    ( aluZero      ),
+        .aluNegative( aluNegative  ),
         .pcSrc      ( pcSrc        ),
         .regWrite   ( regWrite     ),
         .aluSrc     ( aluSrc       ),
@@ -163,6 +166,7 @@ module sr_control
     input     [ 2:0] cmdF3,
     input     [ 6:0] cmdF7,
     input            aluZero,
+    input            aluNegative,
     output           pcSrc, 
     output reg       regWrite, 
     output reg       aluSrc,
@@ -171,15 +175,17 @@ module sr_control
 );
     reg          branch;
     reg          condZero;
-    assign pcSrc = branch & (aluZero == condZero);
+    reg          condNegative;
+    assign pcSrc = branch & (aluZero == condZero | aluNegative == condNegative);
 
     always @ (*) begin
-        branch      = 1'b0;
-        condZero    = 1'b0;
-        regWrite    = 1'b0;
-        aluSrc      = 1'b0;
-        wdSrc       = 1'b0;
-        aluControl  = `ALU_ADD;
+        branch          = 1'b0;
+        condZero        = 1'b0;
+        condNegative    = 1'b0;
+        regWrite        = 1'b0;
+        aluSrc          = 1'b0;
+        wdSrc           = 1'b0;
+        aluControl      = `ALU_ADD;
 
         casez( {cmdF7, cmdF3, cmdOp} )
             { `RVF7_ADD,  `RVF3_ADD,  `RVOP_ADD  } : begin regWrite = 1'b1; aluControl = `ALU_ADD;  end
@@ -193,6 +199,7 @@ module sr_control
 
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUB; end
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : begin branch = 1'b1; aluControl = `ALU_SUB; end
+            { `RVF7_ANY,  `RVF3_BLT,  `RVOP_BLT  } : begin branch = 1'b1; condNegative = 1'b1; aluControl = `ALU_SUB; end
         endcase
     end
 endmodule
@@ -203,6 +210,7 @@ module sr_alu
     input  [31:0] srcB,
     input  [ 2:0] oper,
     output        zero,
+    output        negative,
     output reg [31:0] result
 );
     always @ (*) begin
@@ -217,6 +225,7 @@ module sr_alu
     end
 
     assign zero   = (result == 0);
+    assign negative = (result < 0);
 endmodule
 
 module sm_register_file

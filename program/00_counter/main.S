@@ -2,9 +2,11 @@
 #
 # Stanislav Zhelnio, 2020
 #
-
             .text
 
-start:      mv a0, zero              # t0 = 0
-counter:    addi a0, a0, 1           # t0 = t0 + 1
-            beq zero, zero, counter  # if t0 == t1 then counter
+start:      mv a0, zero
+            li a1, 20
+count:      addi a0, a0, 1
+            blt a0, a1, count
+reset:      mv a0, zero
+            beq zero, zero, count
